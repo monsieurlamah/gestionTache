@@ -1,4 +1,4 @@
-import { BarChart2, DollarSign, Menu, Settings, ShoppingBag, ShoppingCart, TrendingUp, Users } from "lucide-react";
+import { BarChart2, BookCheck, CalendarDays, DollarSign, Menu, MessageCircle, Settings, ShoppingBag, ShoppingCart, TrendingUp, Users } from "lucide-react";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Link } from "react-router-dom";
@@ -10,9 +10,9 @@ const SIDEBAR_ITEMS = [
 	// 	color: "#6366f1",
 	// 	href: "/",
 	// },
-	{ name: "Tâches", icon: ShoppingBag, color: "#8B5CF6", href: "/taches" },
-	{ name: "Semaine", icon: Users, color: "#EC4899", href: "/semaines" },
-	{ name: "Commentaire", icon: DollarSign, color: "#10B981", href: "/commentaire" },
+	{ name: "Tâches", icon: BookCheck, color: "#8B5CF6", href: "/taches" },
+	{ name: "Semaine", icon: CalendarDays, color: "#EC4899", href: "/semaines" },
+	{ name: "Commentaire", icon: MessageCircle, color: "#10B981", href: "/commentaire" },
 	// { name: "Orders", icon: ShoppingCart, color: "#F59E0B", href: "/orders" },
 	// { name: "Analytics", icon: TrendingUp, color: "#3B82F6", href: "/analytics" },
 	// { name: "Settings", icon: Settings, color: "#6EE7B7", href: "/settings" },

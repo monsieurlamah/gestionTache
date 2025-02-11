@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Edit, Search, Trash2, Plus } from "lucide-react";
-import { toast } from "react-toastify"; // Importer toast
+import { toast } from "react-toastify";
+
 
 // Dictionnaires pour les valeurs lisibles
 const CELLULE_LABELS = {
@@ -27,6 +28,12 @@ const DEPARTEMENT_LABELS = {
   statistique_documentation: "Statistique et Documentation",
   autre: "Autre",
 };
+
+const GRADE_LABELS = {
+	chef_cellule: "Chef Cellule",
+	chef_service: "Chef service",
+	autre: "Autre",
+  };
 
 const POURCENTAGE_LABELS = {
   debut: "Début (0%)",
@@ -54,11 +61,34 @@ const TasksTable = () => {
     titre: "",
     date_debut: "",
     date_fin: "",
+    semaine: "",
     cellule: "",
     departement: "",
     employer: "",
     pourcentage: "",
+	grade:"",
+	point_de_blocage:"",
+	detail:"",
   });
+  const [employees, setEmployees] = useState([]);
+  const [semaine, setSemaine] = useState([]);
+
+  useEffect(() => {
+	fetch("http://127.0.0.1:8000/api/v1/employers/")  
+	  .then((response) => response.json())
+	  .then((data) => setEmployees(data))
+	  .catch((error) => console.error("Erreur lors du chargement des employés :", error));
+  }, []);
+
+
+  useEffect(() => {
+	fetch("http://127.0.0.1:8000/api/v1/semaines/")  
+	  .then((response) => response.json())
+	  .then((data) => setSemaine(data))
+	  .catch((error) => console.error("Erreur lors du chargement des semaines :", error));
+  }, []);
+console.log(semaine);
+
 
   useEffect(() => {
     fetch("http://127.0.0.1:8000/api/v1/taches/")
@@ -84,13 +114,13 @@ const TasksTable = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Vérifier que tous les champs sont remplis
     if (!newTask.titre || !newTask.date_debut || !newTask.date_fin || !newTask.cellule || !newTask.departement || !newTask.pourcentage) {
       toast.error("Tous les champs doivent être remplis !");
       return;
     }
 
-    // Envoi des données au backend pour ajouter la nouvelle tâche
+    console.log("Données envoyées :", newTask);
+
     fetch("http://127.0.0.1:8000/api/v1/taches/", {
       method: "POST",
       headers: {
@@ -98,11 +128,16 @@ const TasksTable = () => {
       },
       body: JSON.stringify(newTask),
     })
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          return response.json().then(err => { throw err; });
+        }
+        return response.json();
+      })
       .then((data) => {
         toast.success("Tâche ajoutée avec succès !");
-        setTasks((prevTasks) => [...prevTasks, data]); // Ajouter la nouvelle tâche à la liste
-        setIsModalOpen(false); // Fermer le modal après soumission
+        setTasks((prevTasks) => [...prevTasks, data]); 
+        setIsModalOpen(false);
         setNewTask({
           titre: "",
           date_debut: "",
@@ -111,13 +146,18 @@ const TasksTable = () => {
           departement: "",
           employer: "",
           pourcentage: "",
+		  point_de_blocage:"",
+		  grade:"",
+		  detail:"",
+
         });
       })
       .catch((error) => {
         toast.error("Erreur lors de l'ajout de la tâche");
-        console.error(error);
+        console.error("Erreur de l'API :", error);
       });
-  };
+};
+
 
   return (
     <motion.div
@@ -186,126 +226,199 @@ const TasksTable = () => {
         </table>
       </div>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full">
-		<div className="flex items-center justify-between">
-            <h3 className="text-xl font-semibold text-gray-100 mb-4">Ajouter une tâche</h3>
-		<button
-              onClick={() => setIsModalOpen(false)}
-              className="top-2 right-2 text-gray-400 hover:text-gray-300"
-            >
-              ✕
-            </button>
-		</div>
+	  {isModalOpen && (
+  <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="bg-gray-800 p-6 rounded-lg shadow-xl max-w-4xl w-full">
+      <div className="flex items-center justify-between">
+        <h3 className="text-xl font-semibold text-gray-100 mb-4">Ajouter une tâche</h3>
+        <button
+          onClick={() => setIsModalOpen(false)}
+          className="top-2 right-2 text-gray-400 hover:text-gray-300"
+        >
+          ✕
+        </button>
+      </div>
 
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">Titre</label>
-                  <input
-                    type="text"
-                    name="titre"
-                    value={newTask.titre}
-                    onChange={handleChange}
-                    className="w-full bg-gray-700 text-white p-2 rounded-md"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300">Date de début</label>
-                    <input
-                      type="date"
-                      name="date_debut"
-                      value={newTask.date_debut}
-                      onChange={handleChange}
-                      className="w-full bg-gray-700 text-white p-2 rounded-md"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-300">Date de fin</label>
-                    <input
-                      type="date"
-                      name="date_fin"
-                      value={newTask.date_fin}
-                      onChange={handleChange}
-                      className="w-full bg-gray-700 text-white p-2 rounded-md"
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">Cellule</label>
-                  <select
-                    name="cellule"
-                    value={newTask.cellule}
-                    onChange={handleChange}
-                    className="w-full bg-gray-700 text-white p-2 rounded-md"
-                    required
-                  >
-                    <option value="">Choisir une cellule</option>
-                    {Object.entries(CELLULE_LABELS).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">Département</label>
-                  <select
-                    name="departement"
-                    value={newTask.departement}
-                    onChange={handleChange}
-                    className="w-full bg-gray-700 text-white p-2 rounded-md"
-                    required
-                  >
-                    <option value="">Choisir un département</option>
-                    {Object.entries(DEPARTEMENT_LABELS).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-				
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-300">Progression</label>
-                  <select
-                    name="pourcentage"
-                    value={newTask.pourcentage}
-                    onChange={handleChange}
-                    className="w-full bg-gray-700 text-white p-2 rounded-md"
-                    required
-                  >
-                    <option value="">Choisir la progression</option>
-                    {Object.entries(POURCENTAGE_LABELS).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full bg-indigo-600 text-white py-2 rounded-lg mt-4"
-                >
-                  Ajouter
-                </button>
-              </div>
-            </form>
-            
+      <form onSubmit={handleSubmit}>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-300">Titre</label>
+            <input
+              type="text"
+              name="titre"
+              value={newTask.titre}
+              onChange={handleChange}
+              className="w-full bg-gray-700 text-white p-2 rounded-md"
+              required
+            />
           </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-300">Date de début</label>
+              <input
+                type="date"
+                name="date_debut"
+                value={newTask.date_debut}
+                onChange={handleChange}
+                className="w-full bg-gray-700 text-white p-2 rounded-md"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300">Date de fin</label>
+              <input
+                type="date"
+                name="date_fin"
+                value={newTask.date_fin}
+                onChange={handleChange}
+                className="w-full bg-gray-700 text-white p-2 rounded-md"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300">Grade</label>
+              <select
+                name="grade"
+                value={newTask.grade}
+                onChange={handleChange}
+                className="w-full bg-gray-700 text-white p-2 rounded-md"
+                required
+              >
+                <option value="">Choisir un grade</option>
+                {Object.entries(GRADE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300">Cellule</label>
+              <select
+                name="cellule"
+                value={newTask.cellule}
+                onChange={handleChange}
+                className="w-full bg-gray-700 text-white p-2 rounded-md"
+                required
+              >
+                <option value="">Choisir une cellule</option>
+                {Object.entries(CELLULE_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-300">Département</label>
+              <select
+                name="departement"
+                value={newTask.departement}
+                onChange={handleChange}
+                className="w-full bg-gray-700 text-white p-2 rounded-md"
+                required
+              >
+                <option value="">Choisir un département</option>
+                {Object.entries(DEPARTEMENT_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-gray-300 text-sm">Employé :</label>
+              <select
+                name="employer"
+                value={newTask.employer}
+                onChange={handleChange}
+                className="w-full bg-gray-700 text-white rounded-lg p-2 focus:ring focus:ring-blue-500"
+              >
+                <option value="">Sélectionner un employé</option>
+                {employees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>
+                    {emp.full_name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="text-gray-300 text-sm">Semaine :</label>
+              <select
+                name="semaine"
+                value={newTask.semaine}
+                onChange={handleChange}
+                className="w-full bg-gray-700 text-white rounded-lg p-2 focus:ring focus:ring-blue-500"
+              >
+                <option value="">Sélectionner une semaine</option>
+                {semaine.map((sem) => (
+                  <option key={sem.id} value={sem.id}>
+                    {sem.periode}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+			<div>
+              <label className="text-gray-300 text-sm">Point de blocage :</label>
+              <input
+                type="texte"
+                name="point_de_blocage"
+                value={newTask.point_de_blocage}
+                onChange={handleChange}
+                className="w-full bg-gray-700 text-white p-2 rounded-md"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300">Progression</label>
+            <select
+              name="pourcentage"
+              value={newTask.pourcentage}
+              onChange={handleChange}
+              className="w-full bg-gray-700 text-white p-2 rounded-md"
+              required
+            >
+              <option value="">Choisir la progression</option>
+              {Object.entries(POURCENTAGE_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-300">Détail</label>
+            <textarea
+              name="detail"
+              value={newTask.detail}
+              onChange={handleChange}
+              className="w-full bg-gray-700 text-white p-2 rounded-md"
+              required
+            ></textarea>
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-indigo-600 text-white py-2 rounded-lg mt-4"
+          >
+            Ajouter
+          </button>
         </div>
-      )}
+      </form>
+    </div>
+  </div>
+)}
+
     </motion.div>
   );
 };
